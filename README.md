@@ -10,7 +10,8 @@ subscription plan and provide that in the config.
 
 For more information, please refer to the online documentation for WHMCS and Paddle:
  
-https://developers.whmcs.com/payment-gateways/
+https://developers.whmcs.com/payment-gateways
+
 https://paddle.com/docs/api-custom-checkout/
 
 # Usage and support
