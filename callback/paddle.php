@@ -73,7 +73,11 @@ if ($fields['alert_name'] == 'subscription_payment_succeeded' || $fields['alert_
     $transactionId = $fields['order_id'];
     // If your Paddle Vendor Account VAT settings are to 'Add To Price", use the fee + earnings. If Paddle is set to Include In Price, use the balance_gross
     // $paymentAmount = $fields['balance_gross'];
-    $paymentAmount = $fields['balance_fee'] + $fields['balance_earnings'];
+    if ($gatewayParams["taxInclusive"]) {
+        $paymentAmount = $fields['balance_gross'];
+    } else {
+        $paymentAmount = $fields['balance_fee'] + $fields['balance_earnings'];
+    }
     $paymentFee = 0;
 
     // Invoice ID is in the passthrough field

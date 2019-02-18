@@ -102,6 +102,13 @@ function paddle_config()
             'Size' => '255',
             'Default' => '',
             'Description' => 'Enter a link to your logo for the Paddle checkout',
+        ),
+        'taxInclusive' => array(
+            'FriendlyName' => 'Paddle account VAT Settings "Include in price"',
+            'Type' => 'yesno',
+            'Size' => '255',
+            'Default' => '',
+            'Description' => 'Vendor Settings -> VAT/Taxes -> Include in price ticked?',
         )
     );
 }
