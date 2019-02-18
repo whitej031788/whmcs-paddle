@@ -19,4 +19,4 @@ https://paddle.com/docs/api-custom-checkout/
 # Usage and support
 This code is provided as an example plugin to implement the Paddle checkout on a WHMCS instance. End users may use or modify the code as required as they see fit, as each WHMCS and Paddle implementation can be quite different.
 
-This plugin is not provided by nor supported by Paddle does not provide technical support or maintenance for this plugin or any derivations of it.
+This plugin is not provided by nor supported by Paddle, and Paddle does not provide technical support or maintenance for this plugin or any derivations of it.
