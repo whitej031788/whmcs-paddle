@@ -1,4 +1,6 @@
 <?php
+use WHMCS\Billing\Invoice;
+
 /**
  * WHMCS Sample Paddle Payment Gateway Module
  * You will need to add this file to the modules/gateways/ folder of your WHMCS installation
@@ -90,11 +92,53 @@ function paddle_config()
         ),
         // a text field type allows for single line text input
         'prodId' => array(
-            'FriendlyName' => 'Paddle Plan ID',
+            'FriendlyName' => 'One Time Product ID',
             'Type' => 'text',
             'Size' => '25',
             'Default' => '',
-            'Description' => 'Enter your Plan or Product ID here',
+            'Description' => 'If you are selling one time products, put a Paddle Product ID here for WHMCS to use',
+        ),
+        'monthlyPlanId' => array(
+            'FriendlyName' => 'Monthly Subscription Plan ID',
+            'Type' => 'text',
+            'Size' => '25',
+            'Default' => '',
+            'Description' => 'If you are selling monthly subscriptions, put a Paddle Plan ID set to monthly billing here for WHMCS to use',
+        ),
+        'quarterPlanId' => array(
+            'FriendlyName' => 'Quarterly Subscription Plan ID',
+            'Type' => 'text',
+            'Size' => '25',
+            'Default' => '',
+            'Description' => 'If you are selling quarterly subscriptions, put a Paddle Plan ID set to quarterly billing here for WHMCS to use',
+        ),
+        'semiAnnualPlanId' => array(
+            'FriendlyName' => 'Semi-Annual Subscription Plan ID',
+            'Type' => 'text',
+            'Size' => '25',
+            'Default' => '',
+            'Description' => 'If you are selling semi-annual subscriptions, put a Paddle Plan ID set to semi-annual billing here for WHMCS to use',
+        ),
+        'annualPlanId' => array(
+            'FriendlyName' => 'Annual Subscription Plan ID',
+            'Type' => 'text',
+            'Size' => '25',
+            'Default' => '',
+            'Description' => 'If you are selling annual subscriptions, put a Paddle Plan ID set to annual billing here for WHMCS to use',
+        ),
+        'biennialPlanId' => array(
+            'FriendlyName' => 'Biennial Subscription Plan ID',
+            'Type' => 'text',
+            'Size' => '25',
+            'Default' => '',
+            'Description' => 'If you are selling biennial subscriptions, put a Paddle Plan ID set to biennial billing here for WHMCS to use',
+        ),
+        'triennialPlanId' => array(
+            'FriendlyName' => 'Triennial Subscription Plan ID',
+            'Type' => 'text',
+            'Size' => '25',
+            'Default' => '',
+            'Description' => 'If you are selling triennial subscriptions, put a Paddle Plan ID set to triennial billing here for WHMCS to use',
         ),
         'logoUrl' => array(
             'FriendlyName' => 'Your Logo URL',
@@ -103,7 +147,7 @@ function paddle_config()
             'Default' => '',
             'Description' => 'Enter a link to your logo for the Paddle checkout',
         ),
-        'taxInclusive' => array(
+	    'taxInclusive' => array(
             'FriendlyName' => 'Paddle account VAT Settings "Include in price"',
             'Type' => 'yesno',
             'Size' => '255',
@@ -116,13 +160,13 @@ function paddle_config()
 // Function to generate Paddle URL
 function paddleCheckoutAPI($params)
 {
+    $invoiceBillValues = Invoice::find($params['invoiceid'])->getBillingValues()[0];
     // This takes your WHMCS Paddle Gateway settings and sends them to the Paddle API
     $data = array();
     $data['vendor_id'] = $params['accountID'];;
     $data['vendor_auth_code'] = $params['secretKey'];
-    $data['product_id'] = $params['prodId'];
     $data['customer_email'] = $params['clientdetails']['email'];
-    $data['product_id'] = $params['prodId'];
+    $data['product_id'] = getSubscriptionInterval($invoiceBillValues, $params);
     $data['title'] = $params["description"];
     $data['image_url'] = $params["logoUrl"];
     $data['marketing_consent'] = $params["marketing_emails_opt_in"];
@@ -137,9 +181,12 @@ function paddleCheckoutAPI($params)
     ];
     
     // Comment out below if you are only selling one time products, leave as is for subscriptions
-    $data['recurring_prices'] = [
-		$params['currency'] . ":" . $params['amount']
-	];
+    if ($invoiceBillValues["recurringCyclePeriod"] != 0)
+    {
+        $data['recurring_prices'] = [
+            $params['currency'] . ":" . $params['amount']
+        ];
+    }
 	
 	// Here we make the request to the Paddle API
 	$url = 'https://vendors.paddle.com/api/2.0/product/generate_pay_link';
@@ -150,14 +197,58 @@ function paddleCheckoutAPI($params)
 	$response = curl_exec($ch);
 	
 	// And handle the response...
-    $data = json_decode($response);
+    $myResp = json_decode($response);
 
-	if ($data->success) {
-		return $data->response->url;
+	if ($myResp->success) {
+		return $myResp->response->url;
 	} else {
-        throw new Exception("Your request failed with error: ".$data->error->message);
+        throw new Exception("Your request failed with error: ".$myResp->error->message);
 	}
-} 
+}
+
+function getSubscriptionInterval($invoiceBillValues, $params)
+{
+    if ($invoiceBillValues["recurringCycleUnits"] == "Months")
+    {
+        switch ($invoiceBillValues["recurringCyclePeriod"])
+        {
+            case 0:
+                return $params["prodId"];
+            case 1:
+                return $params["monthlyPlanId"];
+                break;
+            case 3:
+                return $params["quarterPlanId"];
+                break;
+            case 6:
+                return $params["semiAnnualPlan"];
+                break;
+            default:
+                return $params["prodId"];
+                break;
+        }
+    }
+    else // This means it is years
+    {
+        switch ($invoiceBillValues["recurringCyclePeriod"])
+        {
+            case 0:
+                return $params["prodId"];
+            case 1:
+                return $params["annualPlanId"];
+                break;
+            case 2:
+                return $params["biennialPlanId"];
+                break;
+            case 3:
+                return $params["triennialPlanId"];
+                break;
+            default:
+                return $params["prodId"];
+                break;
+        }
+    }
+}
 
 /**
  * Payment link.
