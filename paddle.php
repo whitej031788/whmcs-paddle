@@ -152,7 +152,7 @@ function paddle_config()
             'Type' => 'yesno',
             'Size' => '255',
             'Default' => '',
-            'Description' => 'Vendor Settings -> VAT/Taxes -> Include in price ticked?',
+            'Description' => 'Checkout -> Sales Tax Settings -> Include in price ticked?',
         )
     );
 }
