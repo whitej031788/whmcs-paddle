@@ -158,7 +158,7 @@ function paddle_config()
 }
 
 // Function to generate Paddle URL
-function paddleCheckoutAPI($params)
+function paddleCheckoutAPI($params, $isOneTime)
 {
     $invoiceBillValues = Invoice::find($params['invoiceid'])->getBillingValues()[0];
     // This takes your WHMCS Paddle Gateway settings and sends them to the Paddle API
@@ -166,7 +166,7 @@ function paddleCheckoutAPI($params)
     $data['vendor_id'] = $params['accountID'];;
     $data['vendor_auth_code'] = $params['secretKey'];
     $data['customer_email'] = $params['clientdetails']['email'];
-    $data['product_id'] = getSubscriptionInterval($invoiceBillValues, $params);
+    $data['product_id'] = $isOneTime ? $params["prodId"] : getSubscriptionInterval($invoiceBillValues, $params);
     $data['title'] = $params["description"];
     $data['image_url'] = $params["logoUrl"];
     $data['marketing_consent'] = $params["marketing_emails_opt_in"];
@@ -250,6 +250,20 @@ function getSubscriptionInterval($invoiceBillValues, $params)
     }
 }
 
+function isThisSubscription($id) 
+{
+    $invoiceBillValues = Invoice::find($id)->getBillingValues()[0];
+
+    if ($invoiceBillValues["recurringCyclePeriod"] == 0)
+    {
+        return false;
+    } 
+    else
+    {
+        return true;
+    }
+}
+
 /**
  * Payment link.
  *
@@ -320,9 +334,24 @@ function paddle_link($params)
     $postfields['callback_url'] = $systemUrl . '/modules/gateways/callback/' . $moduleName . '.php';
     $postfields['return_url'] = $returnUrl;
 
-    $htmlOutput = '<form method="get" action="' . paddleCheckoutAPI($params) . '">';
-    $htmlOutput .= '<input type="submit" value="' . $langPayNow . '" />';
+    $isSub = isThisSubscription($params['invoiceid']);
+    $htmlOutput = '';
+    $htmlOutput .= '<form style="width:50px;margin-top:10px;" method="get" action="' . paddleCheckoutAPI($params, false) . '">';
+    if ($isSub)
+    {
+        $htmlOutput .= '<input type="submit" value="Subscribe" />';
+    }
+    else 
+    {
+        $htmlOutput .= '<input type="submit" value="' . $langPayNow . '" />'; 
+    }
     $htmlOutput .= '</form>';
+    if ($isSub)
+    {
+        $htmlOutput .= '<form style="width:50px;margin-top:10px;" method="get" action="' . paddleCheckoutAPI($params, true) . '">';
+        $htmlOutput .= '<input type="submit" value="Check Out" />';
+        $htmlOutput .= '</form>';
+    }
 
     return $htmlOutput;
 }
